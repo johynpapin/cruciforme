@@ -4,6 +4,19 @@ import (
 	badger "github.com/dgraph-io/badger/v2"
 )
 
+type badgerTxn struct {
+	store *badgerKeyValueStore
+}
+
+func (txn *badgerTxn) set(key, value []byte) error {
+
+	return nil
+}
+
+func (txn *badgerTxn) get(key []byte) ([]byte, error) {
+	return nil, nil
+}
+
 type badgerKeyValueStore struct {
 	path string
 	db   *badger.DB
@@ -44,4 +57,30 @@ func (s *badgerKeyValueStore) get(key []byte) (value []byte, err error) {
 	})
 
 	return value, err
+}
+
+func (s *badgerKeyValueStore) view(txnFunc txnFunc) error {
+	txn := s.db.NewTransaction(false)
+	defer txn.Discard()
+
+	if err := txnFunc(&badgerTxn{
+		store: s,
+	}); err != nil {
+		return err
+	}
+
+	return txn.Commit()
+}
+
+func (s *badgerKeyValueStore) update(txnFunc txnFunc) error {
+	txn := s.db.NewTransaction(true)
+	defer txn.Discard()
+
+	if err := txnFunc(&badgerTxn{
+		store: s,
+	}); err != nil {
+		return err
+	}
+
+	return txn.Commit()
 }

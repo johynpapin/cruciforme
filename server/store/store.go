@@ -1,10 +1,19 @@
 package store
 
+type txn interface {
+	set(key, value []byte) error
+	get(key []byte) ([]byte, error)
+}
+
+type txnFunc func(txn) error
+
 type keyValueStore interface {
 	open() error
 	close() error
 	set(key, value []byte) error
 	get(key []byte) ([]byte, error)
+	view(txnFunc txnFunc) error
+	update(txnFunc txnFunc) error
 }
 
 type Store struct {

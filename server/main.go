@@ -30,6 +30,8 @@ func main() {
 
 	r := gin.Default()
 
+	r.Use(ErrorHandlerMiddleware())
+
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowAllOrigins = true
 	corsConfig.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
@@ -47,7 +49,7 @@ func main() {
 	authGroup.POST("/sign-in", h.SignInHandler)
 	authGroup.POST("/refresh", h.RefreshHandler)
 
-	formsGroup := r.Group("/forms")
+	formsGroup := r.Group("/forms", AuthRequiredMiddleware(h.JwtSigningKey))
 
 	formsGroup.GET("", h.GetFormsHandler)
 	formsGroup.POST("", h.CreateFormHandler)

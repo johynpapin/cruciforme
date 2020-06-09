@@ -15,11 +15,11 @@ func (s *Store) CreateUser(user *User) error {
 		return err
 	}
 
-	return s.set([]byte(user.Email), userBytes)
+	return s.set([]byte("users/"+user.Email), userBytes)
 }
 
 func (s *Store) GetUserByEmail(email string) (*User, error) {
-	userBytes, err := s.get([]byte(email))
+	userBytes, err := s.get([]byte("users/" + email))
 	if err != nil {
 		return nil, err
 	} else if userBytes == nil {

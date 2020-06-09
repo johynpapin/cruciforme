@@ -62,14 +62,14 @@ func (h *Handlers) newTokenPair(email string) (string, string, error) {
 	return accessTokenString, refreshTokenString, nil
 }
 
-func (h *Handlers) validateToken(signedToken string) (*claims, error) {
+func ValidateToken(signedToken string, jwtSigningKey []byte) (*claims, error) {
 	claims := &claims{}
 	_, err := jwt.ParseWithClaims(signedToken, claims, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return h.JwtSigningKey, nil
+		return jwtSigningKey, nil
 	})
 	if err != nil {
 		return nil, err
@@ -90,28 +90,24 @@ func (h *Handlers) userExists(email string) (bool, error) {
 func (h *Handlers) SignUpHandler(c *gin.Context) {
 	var form signUpForm
 	if err := c.ShouldBindJSON(&form); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{})
+		InvalidPayloadError.AbortContext(c)
 		return
 	}
 
 	userExists, err := h.userExists(form.Email)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err,
-		})
+		InternalError.AbortContext(c)
 		return
 	}
 
 	if userExists {
-		c.JSON(http.StatusBadRequest, gin.H{})
+		InvalidPayloadError.AbortContext(c)
 		return
 	}
 
 	hashedPassword, err := hashPassword(form.Password)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err,
-		})
+		InternalError.AbortContext(c)
 		return
 	}
 
@@ -119,17 +115,13 @@ func (h *Handlers) SignUpHandler(c *gin.Context) {
 		Email:          form.Email,
 		HashedPassword: hashedPassword,
 	}); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err,
-		})
+		InternalError.AbortContext(c)
 		return
 	}
 
 	accessToken, refreshToken, err := h.newTokenPair(form.Email)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err,
-		})
+		InternalError.AbortContext(c)
 		return
 	}
 
@@ -142,37 +134,33 @@ func (h *Handlers) SignUpHandler(c *gin.Context) {
 func (h *Handlers) SignInHandler(c *gin.Context) {
 	var form signInForm
 	if err := c.ShouldBindJSON(&form); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{})
+		InvalidPayloadError.AbortContext(c)
 		return
 	}
 
 	user, err := h.Store.GetUserByEmail(form.Email)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err,
-		})
+		InternalError.AbortContext(c)
 		return
 	}
 
 	if user == nil {
-		c.JSON(http.StatusUnauthorized, gin.H{})
+		AuthBadCredentialsError.AbortContext(c)
 		return
 	}
 
 	if !checkHashedPassword(form.Password, user.HashedPassword) {
-		c.JSON(http.StatusUnauthorized, gin.H{})
+		AuthBadCredentialsError.AbortContext(c)
 		return
 	}
 
 	accessToken, refreshToken, err := h.newTokenPair(form.Email)
 	if err != nil {
-		c.JSON(500, gin.H{
-			"error": err,
-		})
+		InternalError.AbortContext(c)
 		return
 	}
 
-	c.JSON(200, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"accessToken":  accessToken,
 		"refreshToken": refreshToken,
 	})
@@ -181,25 +169,30 @@ func (h *Handlers) SignInHandler(c *gin.Context) {
 func (h *Handlers) RefreshHandler(c *gin.Context) {
 	var form refreshForm
 	if err := c.ShouldBindJSON(&form); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{})
+		InvalidPayloadError.AbortContext(c)
 		return
 	}
 
-	claims, err := h.validateToken(form.RefreshToken)
+	claims, err := ValidateToken(form.RefreshToken, h.JwtSigningKey)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{})
+		if validationError, ok := err.(*jwt.ValidationError); ok {
+			if validationError.Errors&jwt.ValidationErrorExpired != 0 {
+				AuthRefreshTokenExpiredError.AbortContext(c)
+				return
+			}
+		}
+
+		AuthUnauthorizedError.AbortContext(c)
 		return
 	}
 
 	accessToken, refreshToken, err := h.newTokenPair(claims.Email)
 	if err != nil {
-		c.JSON(500, gin.H{
-			"error": err,
-		})
+		InternalError.AbortContext(c)
 		return
 	}
 
-	c.JSON(200, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"accessToken":  accessToken,
 		"refreshToken": refreshToken,
 	})
