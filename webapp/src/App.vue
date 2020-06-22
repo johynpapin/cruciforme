@@ -1,9 +1,9 @@
 <template>
-  <v-app>
+  <div class="min-h-screen bg-indigo-900">
     <router-view></router-view>
 
     <alert></alert>
-  </v-app>
+  </div>
 </template>
 
 <script>
@@ -17,3 +17,15 @@ export default {
   }
 }
 </script>
+
+<style>
+/* purgecss start ignore */
+@tailwind base;
+
+@tailwind components;
+@import './styles/components.css';
+/* purgecss end ignore */
+
+@tailwind utilities;
+@import './styles/utilities.css';
+</style>

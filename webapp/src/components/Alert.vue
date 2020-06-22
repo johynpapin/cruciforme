@@ -1,7 +1,7 @@
 <template>
-  <v-snackbar :value="currentAlert !== null" :color="alertColor">
-    {{ alertMessage }}
-  </v-snackbar>
+  <div class="border px-4 py-3 rounded fixed inset-x-0 bottom-0 z-30" :class="alertClasses" role="alert" v-if="currentAlert !== null">
+    <span class="block sm:inline">{{ alertMessage }}</span>
+  </div>
 </template>
 
 <script>
@@ -15,19 +15,19 @@ export default {
       currentAlert: state => state.currentAlert
     }),
 
-    alertColor () {
+    alertClasses () {
       if (this.currentAlert === null) {
-        return 'info'
+        return []
       }
 
       switch (this.currentAlert.type) {
         case 'success':
-          return 'success'
+          return ['bg-green-100', 'border-green-400', 'text-green-700']
         case 'error':
-          return 'error'
+          return ['bg-red-100', 'border-red-400', 'text-red-700']
         case 'info':
         default:
-          return 'info'
+          return ['bg-blue-100', 'border-blue-400', 'text-blue-700']
       }
     },
 

@@ -1,0 +1,27 @@
+.input-group {
+	@apply w-full max-w-2xl;
+}
+
+.input-group:not(:last-child) {
+	@apply pb-5;
+}
+
+.input-group label>span:first-child {
+	@apply block text-gray-700 font-bold mb-2;
+}
+
+.input {
+	@apply appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight;
+}
+
+.input:focus {
+	@apply outline-none bg-white border-gray-500;
+}
+
+.input-group.is-invalid .input {
+	@apply border-red-500;
+}
+
+.input-error {
+	@apply block text-red-500 mt-2;
+}

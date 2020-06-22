@@ -6,10 +6,11 @@ import (
 
 type User struct {
 	Email          string
+	Verified       bool
 	HashedPassword string
 }
 
-func (s *Store) CreateUser(user *User) error {
+func (s *Store) PutUser(user *User) error {
 	userBytes, err := json.Marshal(user)
 	if err != nil {
 		return err

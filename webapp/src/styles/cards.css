@@ -1,0 +1,3 @@
+.card {
+	@apply rounded overflow-hidden shadow-md bg-white;
+}

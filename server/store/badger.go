@@ -5,16 +5,22 @@ import (
 )
 
 type badgerTxn struct {
-	store *badgerKeyValueStore
+	txn *badger.Txn
 }
 
 func (txn *badgerTxn) set(key, value []byte) error {
-
-	return nil
+	return txn.txn.Set(key, value)
 }
 
 func (txn *badgerTxn) get(key []byte) ([]byte, error) {
-	return nil, nil
+	item, err := txn.txn.Get(key)
+	if err == badger.ErrKeyNotFound {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	return item.ValueCopy(nil)
 }
 
 type badgerKeyValueStore struct {
@@ -64,7 +70,7 @@ func (s *badgerKeyValueStore) view(txnFunc txnFunc) error {
 	defer txn.Discard()
 
 	if err := txnFunc(&badgerTxn{
-		store: s,
+		txn: txn,
 	}); err != nil {
 		return err
 	}
@@ -77,7 +83,7 @@ func (s *badgerKeyValueStore) update(txnFunc txnFunc) error {
 	defer txn.Discard()
 
 	if err := txnFunc(&badgerTxn{
-		store: s,
+		txn: txn,
 	}); err != nil {
 		return err
 	}

@@ -8,6 +8,8 @@ import DashboardLayout from '../layouts/DashboardLayout.vue'
 import Home from '../views/home/Home.vue'
 import SignIn from '../views/auth/SignIn.vue'
 import SignUp from '../views/auth/SignUp.vue'
+import AfterSignUp from '../views/auth/AfterSignUp.vue'
+import Verify from '../views/auth/Verify.vue'
 import CreateForm from '../views/dashboard/CreateForm.vue'
 import Forms from '../views/dashboard/Forms.vue'
 
@@ -38,6 +40,19 @@ const routes = [
         path: 'sign-up',
         name: 'SignUp',
         component: SignUp
+      },
+      {
+        path: 'after-sign-up',
+        name: 'AfterSignUp',
+        component: AfterSignUp
+      },
+      {
+        path: 'verify',
+        name: 'Verify',
+        component: Verify,
+        props: (route) => ({
+          verificationToken: route.query.token
+        })
       }
     ]
   },
@@ -51,7 +66,7 @@ const routes = [
         component: CreateForm
       },
       {
-        path: '/forms',
+        path: 'forms',
         name: 'Forms',
         component: Forms
       }

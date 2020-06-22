@@ -4,9 +4,12 @@ import (
 	"log"
 	"os"
 
+	"github.com/getsentry/sentry-go"
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/johynpapin/cruciforme/server/email"
 	"github.com/johynpapin/cruciforme/server/handlers"
 	"github.com/johynpapin/cruciforme/server/store"
 )
@@ -28,9 +31,18 @@ func loadEnv() {
 func main() {
 	loadEnv()
 
+	if err := sentry.Init(sentry.ClientOptions{
+		Dsn: os.Getenv("CRUCIFORME_SENTRY_DSN"),
+	}); err != nil {
+		log.Fatalf("sentry initialization failed: %s", err)
+	}
+
 	r := gin.Default()
 
-	r.Use(ErrorHandlerMiddleware())
+	r.Use(sentrygin.New(sentrygin.Options{
+		Repanic: true,
+	}))
+	r.Use(errorHandlerMiddleware())
 
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowAllOrigins = true
@@ -41,6 +53,13 @@ func main() {
 	h := handlers.Handlers{
 		JwtSigningKey: []byte(os.Getenv("CRUCIFORME_JWT_SIGNING_KEY")),
 		Store:         store.New(),
+		EmailSender: email.NewSender(
+			os.Getenv("CRUCIFORME_SENDGRID_API_KEY"),
+			email.EmailAddress{
+				Name:  "Cruciforme",
+				Email: "no-reply@crucifor.me",
+			},
+		),
 	}
 
 	authGroup := r.Group("/auth")
@@ -48,8 +67,9 @@ func main() {
 	authGroup.POST("/sign-up", h.SignUpHandler)
 	authGroup.POST("/sign-in", h.SignInHandler)
 	authGroup.POST("/refresh", h.RefreshHandler)
+	authGroup.POST("/verify", h.UserVerificationHandler)
 
-	formsGroup := r.Group("/forms", AuthRequiredMiddleware(h.JwtSigningKey))
+	formsGroup := r.Group("/forms", authRequiredMiddleware(h.JwtSigningKey))
 
 	formsGroup.GET("", h.GetFormsHandler)
 	formsGroup.POST("", h.CreateFormHandler)

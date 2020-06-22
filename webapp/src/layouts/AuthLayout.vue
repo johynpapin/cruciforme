@@ -1,17 +1,9 @@
 <template>
-  <v-content>
-    <v-container fluid class="fill-height">
-      <v-row no-gutters class="fill-height flex-column">
-        <v-col class="shrink">
-          <v-btn :to="{ name: 'Home' }" depressed>Go back to Home</v-btn>
-        </v-col>
-
-        <v-col class="grow">
-          <router-view/>
-        </v-col>
-      </v-row>
-    </v-container>
-  </v-content>
+  <div class="min-h-screen flex items-center justify-center">
+    <div class="rounded overflow-hidden shadow-lg bg-white py-8 px-10 w-full max-w-2xl">
+      <router-view/>
+    </div>
+  </div>
 </template>
 
 <script>

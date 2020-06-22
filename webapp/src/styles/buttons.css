@@ -1,0 +1,41 @@
+.btn {
+	@apply font-bold py-2 px-4 rounded;
+}
+
+.btn-xl {
+	@apply text-2xl;
+}
+
+.btn-primary {
+	@apply bg-blue-500 text-white;
+}
+
+.btn-primary:hover {
+	@apply bg-blue-700;
+}
+
+.btn-secondary {
+  @apply bg-gray-400 text-gray-800;
+}
+
+.btn-secondary:hover {
+  @apply bg-gray-500;
+}
+
+.btns {
+	@apply flex flex-wrap;
+}
+
+.btns .btn {
+	@apply flex-grow mb-2;
+}
+
+@screen md {
+	.btns {
+		@apply -mx-1;
+	}
+
+	.btns .btn {
+		@apply flex-grow-0 mx-1;
+	}
+}

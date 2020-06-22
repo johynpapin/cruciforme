@@ -8,7 +8,7 @@ const actions = {
   async signIn ({ commit }, user) {
     try {
       await AuthService.signIn(user)
-      commit('signin')
+      commit('signIn')
     } catch (err) {
       commit('logout')
       throw err
@@ -16,9 +16,13 @@ const actions = {
   },
 
   async signUp ({ commit }, user) {
+    await AuthService.signUp(user)
+  },
+
+  async verify ({ commit }, request) {
     try {
-      await AuthService.signUp(user)
-      commit('signin')
+      await AuthService.verify(request)
+      commit('signIn')
     } catch (err) {
       commit('logout')
       throw err
@@ -33,7 +37,7 @@ const actions = {
 }
 
 const mutations = {
-  signin (state) {
+  signIn (state) {
     state.signedIn = true
   },
   logout (state) {

@@ -6,22 +6,38 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type APIError int
+type APIErrorCode string
 
 const (
-	AuthBadCredentialsError APIError = iota
-	AuthAccessTokenExpiredError
-	AuthRefreshTokenExpiredError
-	AuthUnauthorizedError
-	InvalidPayloadError
-	InternalError
+	AuthBadCredentialsError            APIErrorCode = "auth-bad-credentials"
+	AuthEmailAlreadyInUseError         APIErrorCode = "auth-email-already-in-use"
+	AuthAccessTokenExpiredError        APIErrorCode = "auth-access-token-expired"
+	AuthRefreshTokenExpiredError       APIErrorCode = "auth-refresh-token-expired"
+	AuthUserNotVerifiedError           APIErrorCode = "auth-user-not-verified"
+	AuthUnauthorizedError              APIErrorCode = "auth-unauthorized"
+	UsersVerificationTokenExpiredError APIErrorCode = "users-verification-token-expired"
+	UsersVerificationTokenInvalidError APIErrorCode = "users-verification-token-invalid"
+	InvalidPayloadError                APIErrorCode = "invalid-payload"
+	InternalError                      APIErrorCode = "internal"
 )
 
-func (e APIError) Status() int {
-	switch e {
-	case AuthBadCredentialsError, AuthAccessTokenExpiredError, AuthRefreshTokenExpiredError, AuthUnauthorizedError:
+type APIError struct {
+	code APIErrorCode
+	err  error
+}
+
+func NewAPIError(code APIErrorCode, err error) *APIError {
+	return &APIError{
+		code: code,
+		err:  err,
+	}
+}
+
+func (e *APIError) Status() int {
+	switch e.code {
+	case AuthBadCredentialsError, AuthAccessTokenExpiredError, AuthRefreshTokenExpiredError, AuthUnauthorizedError, AuthUserNotVerifiedError:
 		return http.StatusUnauthorized
-	case InvalidPayloadError:
+	case InvalidPayloadError, AuthEmailAlreadyInUseError, UsersVerificationTokenExpiredError, UsersVerificationTokenInvalidError:
 		return http.StatusBadRequest
 	case InternalError:
 		fallthrough
@@ -30,30 +46,19 @@ func (e APIError) Status() int {
 	}
 }
 
-func (e APIError) Code() string {
-	switch e {
-	case AuthBadCredentialsError:
-		return "auth-bad-credentials"
-	case AuthAccessTokenExpiredError:
-		return "auth-access-token-expired"
-	case AuthRefreshTokenExpiredError:
-		return "auth-refresh-token-expired"
-	case AuthUnauthorizedError:
-		return "auth-unauthorized"
-	case InvalidPayloadError:
-		return "invalid-payload"
-	case InternalError:
-		fallthrough
-	default:
-		return "internal"
-	}
+func (e *APIError) Code() string {
+	return string(e.code)
 }
 
-func (e APIError) Error() string {
-	return e.Code()
+func (e *APIError) Error() string {
+	return e.err.Error()
 }
 
-func (e APIError) AbortContext(c *gin.Context) {
+func (e *APIError) Unwrap() error {
+	return e.err
+}
+
+func (e *APIError) AbortContext(c *gin.Context) {
 	c.Error(e).SetType(gin.ErrorTypePublic)
 	c.Abort()
 }

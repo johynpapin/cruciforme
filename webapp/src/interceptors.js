@@ -1,23 +1,35 @@
 import axios from 'axios'
+import AuthService from './services/auth-service'
 
 function isAccessTokenExpiredError (errorResponse) {
-  return errorResponse.status === 401
+  if (errorResponse.status !== 401) {
+    return false
+  }
 
-  // TODO: check response error code
+  if (!errorResponse.data.error) {
+    return false
+  }
+
+  return errorResponse.data.error.code === 'auth-access-token-expired'
 }
 
-function refreshTokenAndRetry (error) {
-  return Promise.reject(error)
+async function refreshTokenAndRetry (error) {
+  const { accessToken } = await AuthService.refresh()
+
+  const config = error.config
+  config.headers.Authorization = accessToken
+
+  return axios.request(config)
 }
 
-function responseErrorHandler (error) {
+async function responseErrorHandler (error) {
   const errorResponse = error.response
 
   if (isAccessTokenExpiredError(errorResponse)) {
     return refreshTokenAndRetry(error)
   }
 
-  return Promise.reject(error)
+  throw error
 }
 
 axios.interceptors.response.use(undefined, responseErrorHandler)

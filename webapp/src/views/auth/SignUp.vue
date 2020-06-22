@@ -1,47 +1,24 @@
 <template>
-  <v-row align="center" justify="center" class="fill-height">
-    <v-col cols="11" sm="8" md="4">
-      <v-card class="elevation-12">
-        <v-toolbar color="primary" dark flat>
-          <v-toolbar-title>Sign up</v-toolbar-title>
-        </v-toolbar>
+  <validation-observer v-slot="{ handleSubmit }">
+    <form @submit.prevent="handleSubmit(signUp)">
+      <h1 class="text-3xl mb-6 font-semibold text-gray-700">Sign up</h1>
 
-        <v-form @submit.prevent="submit">
-          <v-card-text>
-            <v-text-field
-              label="Email"
-              prepend-icon="mdi-account"
-              type="email"
-              v-model="email"
-            ></v-text-field>
+      <text-input name="Email" type="email" rules="required|email" v-model="email"></text-input>
+      <text-input name="Password" type="password" rules="required" v-model="password"></text-input>
+      <text-input name="Password verification" type="password" rules="required"></text-input>
 
-            <v-text-field
-              label="Password"
-              prepend-icon="mdi-lock"
-              type="password"
-              v-model="password"
-            ></v-text-field>
-
-              <v-text-field
-              label="Password verification"
-              prepend-icon="mdi-lock"
-              type="password"
-              v-model="passwordVerification"
-            ></v-text-field>
-          </v-card-text>
-
-          <v-card-actions>
-            <v-spacer></v-spacer>
-
-            <v-btn color="primary" type="submit">Sign up</v-btn>
-          </v-card-actions>
-        </v-form>
-      </v-card>
-    </v-col>
-  </v-row>
+      <div class="btns">
+        <button class="btn btn-primary" type="submit">Sign up</button>
+      </div>
+    </form>
+  </validation-observer>
 </template>
 
 <script>
+import store from '@/store'
+import { ValidationObserver } from 'vee-validate'
+import TextInput from '@/components/TextInput.vue'
+
 export default {
   name: 'SignUp',
 
@@ -52,9 +29,23 @@ export default {
   }),
 
   methods: {
-    submit () {
-      // TODO: handle sign up
+    async signUp () {
+      const user = {
+        email: this.email,
+        password: this.password
+      }
+
+      await store.dispatch('auth/signUp', user)
+
+      this.$router.push({
+        name: 'AfterSignUp'
+      })
     }
+  },
+
+  components: {
+    ValidationObserver,
+    TextInput
   }
 }
 </script>
